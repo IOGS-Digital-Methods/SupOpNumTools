@@ -11,8 +11,9 @@ name: Upload Python Package to PiPy
 #on:
 #  release:
 #    types: [published]
-on: workflow_dispatch
-
+on: 
+  workflow_dispatch
+  push
 
 permissions:
   contents: read
