@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-SupOpToolbox
+Numerical Methods for Maths and Physics
 
 Author : Julien VILLEMEJANE
 Laboratoire d Enseignement Experimental - Institut d Optique Graduate School
-Version : 0.1.0 - 2023-04-24
+Version : 1.0 - 2022-12-01
+
+Adapted from Francois Marquier / ENS Paris-Saclay
 """
 
-from . import elec_modeling
 from . import math_phys_methods
-from . import signal_processing
-
-def test():
-    print('ok')
 
 if __name__ == '__main__':
-    print("SupOpToolbox")
+    print("Numerical Methods for Maths and Physics")
