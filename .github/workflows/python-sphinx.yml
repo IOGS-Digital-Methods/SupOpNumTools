@@ -18,4 +18,4 @@ jobs:
     - uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
-        build-command: "sphinx-build -b html ./sources/ ."
+        build-command: "sphinx-build -b html sources/ ."
