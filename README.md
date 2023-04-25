@@ -12,8 +12,6 @@ This project is still **in development**. To contribute, look at the *Collaborat
 1. [General Info](#general-info)
 2. [Installation](#installation)
 3. [How To Use](#how-to-use)
-4. [Collaboration](#collaboration)
-5. [FAQs](#faqs)
 
 ## About SupOptique
 Founded in 1917, the Institut d'Optique Graduate School is a world leader in higher education, research and innovation in optics and photonics.
@@ -29,10 +27,11 @@ For more informations : [Institut d'Optique](https://www.institutoptique.fr/en)
 
 ## General Info
 
-This repository contains :
+This repository contains **Python Functions** for physicists. They are classified in the following categories :
+- sig1D : 1D signal generation (vector)
+- img2D : 2D image generation (matrix)
+- sigproc : 1D signal processing
 
-- **Python Libraries** for physicists (*python_lib* directory)
-- **Python Examples** for physicists (*python_examples* directory)
 
 ## Installation
 
@@ -42,12 +41,4 @@ If you're not familiar to Git repository, you can also **download** the [archive
 
 ## How To Use
 
-To use **Python Libraries**, you can add the *python_lib* directory to the PYTHONPATH of your Python development interface. 
-
-For example, in **Spyder**, you can select `TOOLS > PYTHONPATH` and add the path to *python_lib* directory.
-
-## Collaboration
-
-
-## FAQs
-
+For more details, see the [SupOpNumTools documentation page](https://iogs-digital-methods.github.io/SupOpNumTools/)
