@@ -7,7 +7,7 @@ Laboratoire d Enseignement Experimental - Institut d Optique Graduate School
 Version : 1.0 - 2022-12-01
 """
 
-from . import signal_processing
+from . import sigproc
 
 if __name__ == '__main__':
     print("Signal Processing libraries of functions")
