@@ -1,20 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-SupOpToolbox
+from . import *
 
-Author : Julien VILLEMEJANE
-Laboratoire d Enseignement Experimental - Institut d Optique Graduate School
-Version : 0.1.0 - 2023-04-24
-"""
+from .sig1D import *
+from .sig1D.sig1D import *
 
-'''
-from . import elecmodel
-from . import math_phys_methods
-from . import sig1D
-from . import sig2D
+from .sig2D import *
+from .sig2D.sig2D import *
 
-def test():
-    print('ok')
-'''
-if __name__ == '__main__':
-    print("SupOpToolbox")
+from .pyqt5 import *
+from .pyqt5.widgets import *
+
+from .math_phys_methods import *
+from .math_phys_methods.math_phys_methods import *
+
+from .elecmodel import *
+from .elecmodel.photodetection import *
+
