@@ -17,9 +17,9 @@ from PyQt5.QtCore import Qt, pyqtSignal, QObject, QRect
 
 from pyqtgraph import PlotWidget, plot, mkPen
 
-styleH1 = "font-size:20px; padding:10px; color:Navy; border-top: 1px solid Navy;"
-styleH = "font-size:18px; padding:10px; color:Navy;"
-styleV = "font-size:14px; padding:5px; "
+styleH1 = "font-size:16px; padding:7px; color:Navy; border-top: 1px solid Navy;"
+styleH = "font-size:14px; padding:4px; color:Navy;"
+styleV = "font-size:14px; padding:2px; "
 
 
 """
@@ -206,7 +206,7 @@ class sliderBlock(QWidget, QObject):
     def __init__(self, name="", percent=False):
         super(sliderBlock, self).__init__()
 
-        ''' '''
+        ''' Global Values '''
         self.percent = percent
         self.minValue = 0
         self.maxValue = 100
@@ -231,8 +231,8 @@ class sliderBlock(QWidget, QObject):
         self.minSlider = 0
         self.maxSlider = self.maxValue*self.ratioSlider
         self.sliderValue = self.realValue
-        self.slider.setMinimum(self.minSlider)
-        self.slider.setMaximum(self.maxSlider)
+        self.slider.setMinimum(int(self.minSlider))
+        self.slider.setMaximum(int(self.maxSlider)+1)
         self.slider.setValue(self.sliderValue)
         self.slider.setMinimumWidth(100)
         self.slider.setMaximumWidth(200)
@@ -250,17 +250,16 @@ class sliderBlock(QWidget, QObject):
         self.slider.valueChanged.connect(self.sliderChanged)
         self.name.clicked.connect(self.valueChanged)
         
-        self.initBlock()
-
-    def initBlock(self):
-        self.userValue.setText('1')
+        self.setValue(self.realValue)
         self.updateDisplay()
+        self.updateGUI()
+        
         
     def getName(self):
         return self.name
     
     def setName(self, name):
-        self.name = name
+        self.name.setText(name)
         
     def setEnabled(self, value):
         self.enabled = value
@@ -303,9 +302,9 @@ class sliderBlock(QWidget, QObject):
             msg.exec_()
             self.realValue = 1
             self.userValue.setText(str(self.realValue))
-        self.sliderValue = self.realValue
+        self.sliderValue = self.realValue*self.ratioSlider
+        self.slider.setValue(int(self.sliderValue))
         self.updateDisplay()
-        self.slider.setValue(0)
         self.asignal.emit('S')    
     
     def sliderChanged(self, event):
@@ -317,8 +316,8 @@ class sliderBlock(QWidget, QObject):
         self.updateDisplay()
         self.asignal.emit('S')
     
-    def setPercent(self, value, maxValue=100):
-        self.percent = value
+    def setPercent(self, maxValue=100):
+        self.percent = True
         self.minValue = -maxValue
         self.minSlider = self.minValue*self.ratioSlider
         self.maxValue = maxValue
@@ -326,17 +325,24 @@ class sliderBlock(QWidget, QObject):
         self.slider.setMinimum(self.minSlider)
         self.slider.setMaximum(self.maxSlider)
         self.slider.setValue(0)
+        self.updateDisplay()
         
     def setMinMaxSlider(self, min, max):
+        self.percent = False
+        self.minValue = min
+        self.maxValue = max
         self.minSlider = min
         self.maxSlider = max
         self.minSlider = self.minValue*self.ratioSlider
         self.maxSlider = self.maxValue*self.ratioSlider
-        self.slider.setMinimum(self.minSlider)
-        self.slider.setMaximum(self.maxSlider)
+        self.slider.setMinimum(int(self.minSlider))
+        self.slider.setMaximum(int(self.maxSlider))
+        self.slider.setValue(int(self.minSlider))
+        self.updateDisplay()
     
     def setUnits(self, units):
         self.units = units
+        self.updateDisplay()
     
     def updateDisplay(self):
         displayValue = self.sliderValue
@@ -349,7 +355,7 @@ class sliderBlock(QWidget, QObject):
             displayUnits = 'M'+self.units
             
         textT = f'{displayValue} {displayUnits}'
-        self.value.setText(textT)        
+        self.value.setText(textT)  
     
     def getSliderValue(self):
         return self.slider.value()/self.ratioSlider
@@ -373,6 +379,15 @@ class sliderBlock(QWidget, QObject):
         self.sliderValue = value
         self.userValue.setText(str(value))
         self.slider.setValue(value)
+        
+    def setRatio(self, value):
+        self.ratioSlider = value        
+        self.minSlider = self.minValue*self.ratioSlider
+        self.maxSlider = self.maxValue*self.ratioSlider
+        self.slider.setMinimum(int(self.minSlider))
+        self.slider.setMaximum(int(self.maxSlider))
+        self.slider.setValue(int(self.minSlider))
+        self.updateDisplay()
     
   
     
