@@ -51,7 +51,7 @@ plt.figure()
 plt.plot(freqData[:,0], 20*np.log10(freqSignalM[:,0]))
 plt.plot(freqData[:,1], 20*np.log10(freqSignalM[:,1]))
 plt.xscale('log')
-
+plt.show()
 
 '''
 RT = 1e6;           # resistance de contre-reaction
