@@ -23,9 +23,6 @@ Authors
     Oscar BOUCHER
     Julien VILLEMEJANE
 
-Use
----
-    >>> python cameraIDS.py
 """
 
 # Standard libraries
@@ -37,10 +34,11 @@ class uEye_ERROR(Exception):
     """
     
     """
-    
-    def __init__(self, ERROR_mode = "uEye_ERROR"):
+
+    def __init__(self, ERROR_mode="uEye_ERROR"):
         self.ERROR_mode = ERROR_mode
         super().__init__(self.ERROR_mode)
+
 
 def get_nb_of_cam():
     """
@@ -55,6 +53,7 @@ def get_nb_of_cam():
         return 0
     else:
         return nb.value
+
 
 def get_cam_list():
     """
@@ -87,7 +86,7 @@ def get_cam_list():
         return []
 
 
-#-------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------
 
 class uEyeCamera:
     def __init__(self, cam_id=0):
@@ -137,7 +136,7 @@ class uEyeCamera:
             name = sensor_info.strSensorName.decode('utf-8')
             pixel = sensor_info.wPixelSize.value
             return max_width, max_height, name, pixel
-    
+
     def get_sensor_max_width(self):
         sensor_info = ueye.SENSORINFO()
 
@@ -147,7 +146,7 @@ class uEyeCamera:
             return None
         else:
             return sensor_info.nMaxWidth.value
-    
+
     def get_sensor_max_height(self):
         sensor_info = ueye.SENSORINFO()
 
@@ -157,7 +156,7 @@ class uEyeCamera:
             return None
         else:
             return sensor_info.nMaxHeight.value
-    
+
     def set_display_mode(self, mode):
         ret = ueye.is_SetDisplayMode(self.h_cam, mode)
         if ret != ueye.IS_SUCCESS:
@@ -202,7 +201,7 @@ class uEyeCamera:
             self.MemID = ueye.int()
             self.pcImageMemory = ueye.c_mem_p()
             self.pitch = ueye.INT()
-            
+
     def stop_camera(self):
         ueye.is_ExitCamera(self.h_cam)
 
@@ -286,7 +285,6 @@ class uEyeCamera:
         else:
             return True
 
-
     def get_exposure(self):
         exposure = ueye.double()
         ueye.is_Exposure(self.h_cam, ueye.IS_EXPOSURE_CMD_GET_EXPOSURE, exposure, ueye.sizeof(exposure))
@@ -309,19 +307,19 @@ class uEyeCamera:
 
     def get_frame_rate(self):
         fps = ueye.double()
-        ueye.is_GetFramesPerSecond (self.h_cam, fps)
+        ueye.is_GetFramesPerSecond(self.h_cam, fps)
         return int(fps)
 
     def get_frame_time_range(self):
         min_t = ueye.DOUBLE()
         max_t = ueye.DOUBLE()
         step_t = ueye.DOUBLE()
-        ueye.is_GetFrameTimeRange (self.h_cam, min_t, max_t, step_t)
+        ueye.is_GetFrameTimeRange(self.h_cam, min_t, max_t, step_t)
         return min_t.value, max_t.value, step_t.value
 
     def get_frame_rate_range(self):
         min_t, max_t, step_t = self.get_frame_time_range()
-        return 1/max_t, 1/min_t, 1/step_t
+        return 1 / max_t, 1 / min_t, 1 / step_t
 
     def set_frame_rate(self, fps):
         set_fps = ueye.double(fps)
@@ -343,15 +341,16 @@ class uEyeCamera:
         ret = ueye.is_PixelClock(self.h_cam, ueye.IS_PIXELCLOCK_CMD_SET, pixel_clock, ueye.sizeof(pixel_clock))
         if ret != ueye.IS_SUCCESS:
             raise uEye_ERROR("set_PixelClock")
-        
+
     def get_black_level(self):
         blacklevel = ueye.uint()
         ueye.is_Blacklevel(self.h_cam, ueye.IS_BLACKLEVEL_CMD_GET_OFFSET, blacklevel, ueye.sizeof(blacklevel))
         return blacklevel
-    
+
     def set_black_level(self, value):
         blacklevel = ueye.uint(value)
         ueye.is_Blacklevel(self.h_cam, ueye.IS_BLACKLEVEL_CMD_SET_OFFSET, blacklevel, ueye.sizeof(blacklevel))
+
 
 # -------------------------------------------------------------------------------------------------------
 
@@ -369,8 +368,7 @@ def get_cam_color_mode(user_color_mode):
         "MONO8": ueye.IS_CM_MONO8,
         "MONO10": ueye.IS_CM_MONO10,
         "MONO12": ueye.IS_CM_MONO12,
-        "RGB": ueye.IS_CM_MONO12,
-        
+
     }[user_color_mode]
 
 
@@ -456,15 +454,17 @@ def adjust_aoi(x, y, width, height):
 
 
 if __name__ == '__main__':
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     camera = uEyeCamera(0)
     ser_no, cam_id = camera.get_cam_info()
 
     print(f'Serial = {ser_no} / ID = {cam_id}')
 
-    camera.set_pixel_clock(50)
     camera.set_frame_rate(10)
 
-    camera.set_exposure_time(20)
+    camera.set_exposure_time(40)
     camera.set_colormode(get_cam_color_mode("MONO12"))
     max_w = camera.get_sensor_max_width()
     max_h = camera.get_sensor_max_height()
@@ -472,22 +472,71 @@ if __name__ == '__main__':
     camera.set_aoi(0, 0, max_w, max_h)
     camera.alloc()
     camera.capture_video()
-
+    time.sleep(0.2)
+    frame_list = []
     for i in range(10):
+        print(i)
         frame = camera.get_image()
-        print(type(frame))
-        print(frame.shape)
+        aoi_x, aoi_y, aoi_w, aoi_h = camera.get_aoi()
+        if camera.nBitsPerPixel.value > 8:
+            # Raw data array for analysis
+            camera_raw_frame = frame.view(np.uint16)
+            camera_frame = np.reshape(camera_raw_frame, (aoi_h, aoi_w, -1))
+
+            # 8bits array for frame displaying.
+            camera_frame_8b = camera_frame / (2 ** (camera.nBitsPerPixel.value - 8))
+            camera_array = camera_frame_8b.astype(np.uint8)
+        else:
+            camera_raw_frame = frame.view(np.uint8)
+            camera_array = camera_raw_frame
+        frame_list.append(camera_array)
         camera.stop_video()
         camera.un_alloc()
-        camera.set_aoi(200, 300, 500, 200)
+        camera.set_aoi(200, 300, 1000, 400)
         camera.alloc()
         camera.capture_video()
-
-
+        time.sleep(0.2)
 
     frame = camera.get_image()
+    camera.stop_video()
+    camera.un_alloc()
     print(type(frame))
     print(frame.shape)
+
+    for i in range(10):
+        plt.imshow(frame_list[i])
+        plt.show()
+
+    # Test of capture duration
+    camera.set_aoi(0, 0, max_w, max_h)
+    time0 = time.time()
+    camera.alloc()
+    camera.capture_video()
+    time.sleep(0.2)
+    time1 = time.time()
+    frame = camera.get_image()
+    time2 = time.time()
+    aoi_x, aoi_y, aoi_w, aoi_h = camera.get_aoi()
+    time3 = time.time()
+    if camera.nBitsPerPixel.value > 8:
+        # Raw data array for analysis
+        camera_raw_frame = frame.view(np.uint16)
+        camera_frame = np.reshape(camera_raw_frame, (aoi_h, aoi_w, -1))
+
+        # 8bits array for frame displaying.
+        camera_frame_8b = camera_frame / (2 ** (camera.nBitsPerPixel.value - 8))
+        camera_array = camera_frame_8b.astype(np.uint8)
+    else:
+        camera_raw_frame = frame.view(np.uint8)
+        camera_array = camera_raw_frame
+    time4 = time.time()
+    plt.imshow(camera_array)
+    plt.show()
+
+    print(f'starting Time = {int((time1-time0)*1000000)} us')
+    print(f'get_image Time = {int((time2-time1)*1000000)} us')
+    print(f'get_aoi Time = {int((time3-time2)*1000000)} us')
+    print(f'reshape Time = {int((time4-time3)*1000000)} us')
 
     # Stop Camera
     camera.stop_camera()

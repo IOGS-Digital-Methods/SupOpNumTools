@@ -143,7 +143,7 @@ class HistWidget(QWidget):
         bins = self.plot_bins_data[:len(self.plot_hist)]
         barGraph = BarGraphItem(x=bins,
                                 height=self.plot_hist,
-                                width=100, brush=self.line_color)
+                                width=1, brush=self.line_color)
         self.plot_chart_widget.addItem(barGraph)
 
     def update_infos(self, val = True):

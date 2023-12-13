@@ -194,13 +194,11 @@ class CameraIDSDisplay(QWidget):
         self.expo_min, self.expo_max = self.camera.get_exposure_range()
         self.exposure_time = self.expo_max/2
         self.camera.set_exposure_time(self.exposure_time)
-        print(self.color_mode_list())
-        self.set_color_mode(self.user_color_mode)
+        self.set_color_mode(self.user_color_mode)   #### TO CHANGE BY USER ??
         self.camera.set_aoi(0, 0, self.max_width, self.max_height)        
         self.n_bits_per_pixel = self.camera.nBitsPerPixel.value
         self.bytes_per_pixel = int(np.ceil(self.n_bits_per_pixel / 8))
         self.clear_layout()
-        self.connected_signal.emit('C')
         str = f'Bits per pixel = {self.get_nb_bits_per_pixel()} / Size : W = {self.get_camera_width()} / H = {self.get_camera_height()}'
         self.camera_info.setText(str)
         self.camera_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -208,7 +206,7 @@ class CameraIDSDisplay(QWidget):
         self.camera_info.setStyleSheet(styleH)
         self.main_layout.addWidget(self.camera_display)
         self.main_layout.addWidget(self.camera_info)
-        self.refresh()
+        self.connected_signal.emit('C')
       
     def start_cam(self):
         if self.camera_connected:
@@ -223,6 +221,7 @@ class CameraIDSDisplay(QWidget):
             if self.camera_started:
                 self.camera.stop_video()
                 self.camera.un_alloc()
+                time.sleep(0.2)
                 self.camera_started = False
 
     def color_mode_list(self):
@@ -279,7 +278,6 @@ class CameraIDSDisplay(QWidget):
 
             # display it in the cameraDisplay
             self.camera_display.setPixmap(pmap)
-
             return camera_raw_array
 
     def get_camera_width(self):
@@ -430,7 +428,7 @@ class CameraIDSDisplay(QWidget):
         return self.color_mode
 
     def print_cam_info(self):
-        if(self.camera_connected):
+        if self.camera_connected:
             print('\n\tCamera Info\n')
             print(f'\t\tFPS : {self.FPS} fps')
             print(f'\t\texpo Time : {self.exposure_time} ms')
@@ -452,7 +450,6 @@ class CameraIDSDisplay(QWidget):
 
     def set_aoi(self, x, y, width, height):
         if self.is_aoi_in_range(x, y, width, height):
-            print('OK2')
             self.camera.set_aoi(x, y, width, height)
         else:
             print('AOI Range Error')
@@ -477,6 +474,24 @@ class CameraIDSDisplay(QWidget):
             return True
         else:
             return False
+
+    def closeEvent(self, event):
+        """
+        Closes the application properly.
+
+        Parameters
+        ----------
+        event : event
+            Event that triggers the action.
+
+        Returns
+        -------
+        None.
+
+        """
+        if self.camera_connected:
+            self.disconnect()
+        QApplication.quit()
 
 '''
 CameraIDSmainParams class
@@ -588,6 +603,7 @@ class MyWindow(QMainWindow):
 
         self.timer_time = int(100.0)
         self.timer_update = QTimer()
+        self.timer_update.stop()
         self.timer_update.setInterval(self.timer_time)
         self.timer_update.timeout.connect(self.refresh_app)
 
