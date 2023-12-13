@@ -14,9 +14,6 @@ Authors
 -------
     Julien VILLEMEJANE
 
-Use
----
-    >>> python TimeChartWidget.py
 """
 # PEP257 / PEP8 // OK
 

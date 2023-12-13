@@ -14,9 +14,6 @@ Authors
 -------
     Julien VILLEMEJANE
 
-Use
----
-    >>> python HistWidget.py
 """
 # PEP257 / PEP8 // OK
 
@@ -55,6 +52,8 @@ class HistWidget(QWidget):
         histogram of the data
     plot_bins_data : Numpy array
         bins on X axis of the chart
+    line_color : CSS color
+        color of the line in the graph - default #0A3250
     
     Methods
     -------
@@ -105,6 +104,9 @@ class HistWidget(QWidget):
         # No data at initialization
         self.plot_chart = self.plot_chart_widget.plot([0])
         self.setLayout(self.layout)
+
+        # Color of line in the graph
+        self.line_color = '#0A3250'
         
     def set_data(self, data, bins):
         """
@@ -137,12 +139,11 @@ class HistWidget(QWidget):
         None.
 
         """
-        # TO CHANGE INTO HISTOGRAM !!
         self.plot_chart_widget.clear()
         bins = self.plot_bins_data[:len(self.plot_hist)]
         barGraph = BarGraphItem(x=bins,
                                 height=self.plot_hist,
-                                width=1, brush='blue')
+                                width=100, brush=self.line_color)
         self.plot_chart_widget.addItem(barGraph)
 
     def update_infos(self, val = True):

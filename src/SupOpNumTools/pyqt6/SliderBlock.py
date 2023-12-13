@@ -14,9 +14,6 @@ Authors
 -------
     Julien VILLEMEJANE
 
-Use
----
-    >>> python SliderBlock.py
 """
 
 import numpy as np

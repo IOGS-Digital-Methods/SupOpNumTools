@@ -17,21 +17,19 @@ Authors
 -------
     Julien VILLEMEJANE
 
-Use
----
-    >>> python cameraIDSdisplay.py
 """
 # Standard Libraries
 import time
 
 import numpy as np
 import cv2
+import sys
 
 # Third pary imports
 from PyQt6.QtWidgets import QWidget, QComboBox, QPushButton
 from PyQt6.QtWidgets import QGridLayout, QVBoxLayout
-from PyQt6.QtWidgets import QLabel
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtWidgets import QLabel, QMainWindow
+from PyQt6.QtCore import pyqtSignal, Qt, QTimer
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6 import QtGui
 
@@ -40,6 +38,7 @@ import SupOpNumTools as sont
 import SupOpNumTools.camera.cameraIDS as camIDS
 import SupOpNumTools.camera.cameraBasler as camBAS
 
+styleH = "font-size:14px; padding:4px; color:Navy;"
 
 class CameraIDSError(Exception):
     """
@@ -66,7 +65,7 @@ class CameraIDSDisplay(QWidget):
     camera_connected: bool
         Returns true if a camera is connected.
     user_color_mode: str
-        "MONO8", "MONO10", "MONO12" or "RGB"
+        "MONO8", "MONO10" or "MONO12"
         converts by get_cam_color_mode from cameraIDS module
     min_width: int
         Minimum width of the widget.
@@ -95,6 +94,7 @@ class CameraIDSDisplay(QWidget):
         self.max_width = -1
         self.max_height = -1
         self.camera_connected = False
+        self.camera_started = False
         # List of cameras
         self.nb_cam = 0
         self.camera_list = []
@@ -124,6 +124,7 @@ class CameraIDSDisplay(QWidget):
 
         # Elements for displaying camera
         self.camera_display = QLabel()
+        self.camera_info = QLabel()
         
         # Display list or camera
         self.display_list()
@@ -186,10 +187,7 @@ class CameraIDSDisplay(QWidget):
         
         self.max_width = self.camera.get_sensor_max_width()
         self.max_height = self.camera.get_sensor_max_height()
-        
-        self.camera.set_pixel_clock(50)
-        
-        self.min_fps, self.max_fps, step_fps = self.camera.get_frame_time_range()
+
         self.min_fps, self.max_fps, step_fps = self.camera.get_frame_rate_range()
         self.FPS = self.max_fps / 2       
         self.camera.set_frame_rate(self.FPS)
@@ -203,21 +201,32 @@ class CameraIDSDisplay(QWidget):
         self.bytes_per_pixel = int(np.ceil(self.n_bits_per_pixel / 8))
         self.clear_layout()
         self.connected_signal.emit('C')
+        str = f'Bits per pixel = {self.get_nb_bits_per_pixel()} / Size : W = {self.get_camera_width()} / H = {self.get_camera_height()}'
+        self.camera_info.setText(str)
+        self.camera_display.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.camera_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.camera_info.setStyleSheet(styleH)
+        self.main_layout.addWidget(self.camera_display)
+        self.main_layout.addWidget(self.camera_info)
+        self.refresh()
       
     def start_cam(self):
         if self.camera_connected:
-            self.camera.alloc()
-            self.camera.capture_video()
+            if self.camera_started is False:
+                self.camera_started = True
+                self.camera.alloc()
+                self.camera.capture_video()
+                time.sleep(0.2)
     
     def stop_cam(self):
         if self.camera_connected:
-            self.camera.stop_video()
-            self.camera.un_alloc()
+            if self.camera_started:
+                self.camera.stop_video()
+                self.camera.un_alloc()
+                self.camera_started = False
 
     def color_mode_list(self):
         list = []
-        if self.camera.is_colormode(camIDS.get_cam_color_mode('RGB')):
-            list.append('RGB')
         if self.camera.is_colormode(camIDS.get_cam_color_mode('MONO12')):
             list.append('MONO12')
         if self.camera.is_colormode(camIDS.get_cam_color_mode('MONO10')):
@@ -232,48 +241,46 @@ class CameraIDSDisplay(QWidget):
 
         Returns
         -------
-        None.
+        Raw data of the camera.
         '''
         if self.camera_connected:
-            self.main_layout.addWidget(self.camera_display)
-            
-            self.camera_raw_array = self.camera.get_image()
-
+            camera_raw_array = self.get_raw_data()
             AOIX, AOIY, AOIWidth, AOIHeight = self.camera.get_aoi()
 
             # Raw data and display frame depends on bytes number per pixel
-            if self.bytes_per_pixel >= 2:
+            if self.n_bits_per_pixel > 8:
                 # Raw data array for analysis
-                self.camera_raw_frame = self.camera_raw_array.view(np.uint16)
-                self.camera_frame = np.reshape(self.camera_raw_frame, 
+                camera_raw_frame = camera_raw_array.view(np.uint16)
+                camera_frame = np.reshape(camera_raw_frame,
                                                (AOIHeight, AOIWidth, -1))
-                
+
                 # 8bits array for frame displaying.
-                camera_frame_8b = self.camera_frame / (2**(self.n_bits_per_pixel-8))
-                self.camera_array = camera_frame_8b.astype(np.uint8)    
+                camera_frame_8b = camera_frame / (2 ** (self.n_bits_per_pixel - 8))
+                camera_array = camera_frame_8b.astype(np.uint8)
             else:
-                self.camera_raw_frame = self.camera_raw_array.view(np.uint8)
-                self.camera_array = self.camera_raw_frame
-            
-            
-            self.frame_width = self.width()-30
-            self.frame_height = self.height()-20
+                camera_raw_frame = camera_raw_array.view(np.uint8)
+                camera_array = camera_raw_frame
+
+            self.frame_width = self.width() - 30
+            self.frame_height = self.height() - 55
             # Reshape of the frame to adapt it to the widget
-            self.camera_disp = np.reshape(self.camera_array, 
-                                         (AOIHeight, AOIWidth, -1))
-            self.camera_disp2 = cv2.resize(self.camera_disp,
-                                         dsize=(self.frame_width, 
-                                                self.frame_height), 
-                                         interpolation=cv2.INTER_CUBIC)
-            
+            camera_disp = np.reshape(camera_array,
+                                          (AOIHeight, AOIWidth, -1))
+            camera_disp2 = cv2.resize(camera_disp,
+                                           dsize=(self.frame_width,
+                                                  self.frame_height),
+                                           interpolation=cv2.INTER_CUBIC)
+
             # Convert the frame into an image
-            image = QImage(self.camera_disp2, self.camera_disp2.shape[1],
-                           self.camera_disp2.shape[0], self.camera_disp2.shape[1],
+            image = QImage(camera_disp2, camera_disp2.shape[1],
+                           camera_disp2.shape[0], camera_disp2.shape[1],
                            QImage.Format.Format_Indexed8)
             pmap = QPixmap(image)
 
             # display it in the cameraDisplay
             self.camera_display.setPixmap(pmap)
+
+            return camera_raw_array
 
     def get_camera_width(self):
         return int(self.camera.get_sensor_max_width())
@@ -284,6 +291,7 @@ class CameraIDSDisplay(QWidget):
     def disconnect(self):
         if self.camera_connected:
             self.camera.stop_camera()
+            self.camera_started = False
             self.camera_connected = False
 
     def get_image_raw(self):
@@ -295,18 +303,67 @@ class CameraIDSDisplay(QWidget):
         image : numpy array
             raw image in full size
         """
-        return self.camera_disp
-          
+        camera_raw_frame = self.get_raw_data()
+        AOIX, AOIY, AOIWidth, AOIHeight = self.camera.get_aoi()
+        camera_frame = np.reshape(camera_raw_frame,(AOIHeight, AOIWidth, -1))
+        return camera_frame
+
+    def get_raw_image(self):
+        """
+        Return raw image from camera.
+
+        Returns
+        -------
+        image : numpy array
+            raw image in full size
+        """
+        return self.get_image_raw()
+
     def get_raw_data(self):
-        return self.camera_raw_frame
+        started = False  # store the initial value of the camera state (video capture started)
+        if self.camera_started:
+            self.camera_raw_array = self.camera.get_image()
+            started = True
+        else:
+            self.start_cam()
+            self.camera_started = True
+            self.camera_raw_array = self.camera.get_image()
+
+        # Raw data and display frame depends on bytes number per pixel
+        if self.bytes_per_pixel >= 2:
+            # Raw data array for analysis
+            camera_raw_frame = self.camera_raw_array.view(np.uint16)
+        else:
+            camera_raw_frame = self.camera_raw_array.view(np.uint8)
+
+        if started is False:
+            self.stop_cam()
+        return camera_raw_frame
 
     def get_camera(self):
         return self.camera
     
     def get_exposure_time(self):
+        """
+        Get the exposure time of the camera in milliseconds.
+
+        Returns
+        -------
+        exposure time : float
+            exposure time of the camera in milliseconds
+        """
         return self.exposure_time
 
     def set_exposure_time(self, time):
+        """
+        Set the exposure time of the camera in milliseconds.
+
+        Parameters
+        ----------
+        time : float
+            Value of the exposure time in milliseconds.
+
+        """
         if self.expo_max >= time >= self.expo_min:
             self.exposure_time = time
         else:
@@ -431,7 +488,6 @@ class cameraIDSmainParams(QWidget):
     fps_signal = pyqtSignal(str)
     blacklevel_signal = pyqtSignal(str)
 
-    
     def __init__(self):
         super().__init__() 
         
@@ -443,6 +499,7 @@ class cameraIDSmainParams(QWidget):
         self.main_layout.addWidget(self.name_label, 0, 0)
 
         # Elements of the widget
+
         self.fps_bl = sont.SliderBlock()
         self.fps_bl.set_units('fps')
         self.fps_bl.set_name('FramePerSec')
@@ -470,7 +527,7 @@ class cameraIDSmainParams(QWidget):
 
     def update(self):
         print('update Params IDS')
-        
+
     def set_exposure_time_range(self, expo_min, expo_max):
         self.exposure_time_bl.set_min_max_slider(expo_min, expo_max)
         
@@ -506,3 +563,72 @@ class cameraIDSmainParams(QWidget):
 
     def set_pixel_clock(self, value):
         self.pixel_clock_label.setText(f'Pixel Clock = {value} MHz')
+
+
+# -----------------------------------------------------------------------------------------------
+# Only for testing
+import time
+class MyWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Camera IDS test Window")
+        self.setGeometry(100, 100, 800, 600)
+
+        self.centralWid = QWidget()
+        self.layout = QVBoxLayout()
+
+        self.camera_widget = CameraIDSDisplay()
+        self.layout.addWidget(self.camera_widget)
+
+        self.centralWid.setLayout(self.layout)
+        self.setCentralWidget(self.centralWid)
+
+        self.camera_widget.connected_signal.connect(self.camera_connection)
+
+        self.timer_time = int(100.0)
+        self.timer_update = QTimer()
+        self.timer_update.setInterval(self.timer_time)
+        self.timer_update.timeout.connect(self.refresh_app)
+
+    def camera_connection(self):
+        print('Camera Connected')
+        self.camera_widget.start_cam()
+        self.camera_widget.refresh()
+        image1 = self.camera_widget.get_image_raw()
+        print(f'get_image_raw SIZE = {image1.shape}')
+        image2 = self.camera_widget.get_raw_image()
+        print(f'get_raw_image SIZE = {image2.shape}')
+
+        print(f'Expo Time = {self.camera_widget.get_exposure_time()} ms')
+        expo_min, expo_max = self.camera_widget.get_exposure_range()
+        print(f'Expo Time Range = {expo_min} ms to {expo_max} ms')
+
+        self.camera_widget.set_exposure_time(expo_max-1)
+        print(f'Expo Time = {self.camera_widget.get_exposure_time()} ms')
+
+        for i in range(10):
+            time1 = time.time()
+            image = self.camera_widget.get_raw_image()
+            print(f'From Camera SIZE = {image.shape}')
+            time2 = time.time()
+            print(f'Exec Time = {int((time2-time1)*1000)} ms')
+            time3 = time.time()
+            self.camera_widget.refresh()
+            time4 = time.time()
+            print(f'Exec Time = {int((time4-time3)*1000)} ms')
+
+        self.timer_update.start()
+
+    def refresh_app(self):
+        self.camera_widget.refresh()
+
+
+# Launching as main for tests
+from PyQt6.QtWidgets import QApplication
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    main = MyWindow()
+    main.show()
+    sys.exit(app.exec())

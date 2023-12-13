@@ -14,9 +14,6 @@ Authors
 -------
     Julien VILLEMEJANE
 
-Use
----
-    >>> python XYChartWidget.py
 """
 # PEP257 / PEP8 // OK
 
@@ -27,7 +24,7 @@ import sys
 # Third pary imports
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import Qt
-from pyqtgraph import PlotWidget
+from pyqtgraph import PlotWidget, mkPen
 
 
 # Local libraries
@@ -53,6 +50,10 @@ class XYChartWidget(QWidget):
         value to display on X axis
     plot_y_data : Numpy array
         value to display on Y axis
+    line_color : CSS color
+        color of the line in the graph - default #0A3250
+    line_width : float
+        width of the line in the graph - default 1
     
     Methods
     -------
@@ -102,6 +103,10 @@ class XYChartWidget(QWidget):
         self.plot_chart = self.plot_chart_widget.plot([0])
         self.setLayout(self.layout)
 
+        # Width and color of line in the graph
+        self.line_color = '#0A3250'
+        self.line_width = 1
+
     def set_data(self, x_axis, y_axis):
         """
         Set the X and Y axis data to display on the chart.
@@ -132,7 +137,8 @@ class XYChartWidget(QWidget):
         """
         self.plot_chart_widget.removeItem(self.plot_chart)
         self.plot_chart = self.plot_chart_widget.plot(self.plot_x_data,
-                                                      self.plot_y_data)
+                                                      self.plot_y_data,
+                                                      pen=mkPen(self.line_color, width=self.line_width))
 
     def update_infos(self, val=True):
         """
@@ -245,6 +251,10 @@ class XYChartWidget(QWidget):
         self.layout.addWidget(self.title_label)
         self.layout.addWidget(self.plot_chart_widget)
         self.layout.addWidget(self.info_label)
+
+    def set_line_color_width(self, color, width):
+        self.line_color = color
+        self.line_width = width
 
 
 # -----------------------------------------------------------------------------------------------
