@@ -3,12 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-   
-   /whatsincluded/whatsincluded
-
 SupOpToolBox : ToolBox for physics and photonics 
 ================================================
 
@@ -40,4 +34,14 @@ To access SupOpNumTools and its functions import it in your Python code like thi
 
 We shorten the imported name to ``SONT`` for better readability of code using
 SupOpNumTools. 
+
+Content of SupOpNumTools
+------------------------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+   
+   /whatsincluded/whatsincluded
+   /pyqt6/index
 
