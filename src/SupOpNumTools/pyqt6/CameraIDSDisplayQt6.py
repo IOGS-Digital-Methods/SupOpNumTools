@@ -50,7 +50,7 @@ class CameraIDSError(Exception):
         super().__init__(self.error_mode)
 
 
-class CameraIDSDisplay(QWidget):
+class CameraIDSDisplayQt6(QWidget):
     """
     cameraIDSDisplay class to create a QWidget for camera display.
     Children of QWidget 
@@ -593,7 +593,7 @@ class MyWindow(QMainWindow):
         self.centralWid = QWidget()
         self.layout = QVBoxLayout()
 
-        self.camera_widget = CameraIDSDisplay()
+        self.camera_widget = CameraIDSDisplayQt6()
         self.layout.addWidget(self.camera_widget)
 
         self.centralWid.setLayout(self.layout)

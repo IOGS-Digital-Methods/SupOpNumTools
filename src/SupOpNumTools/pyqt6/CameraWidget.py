@@ -8,6 +8,8 @@
 
 .. moduleauthor:: Julien VILLEMEJANE <julien.villemejane@institutoptique.fr>
 
+.. note:: Deprecated / Use :class:`camera.cameraIDSdisplayQt6`
+
 """
 
 # Standard
